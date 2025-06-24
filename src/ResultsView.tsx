@@ -110,10 +110,38 @@ const exportToExcel = () => {
     { s: { r: 1, c: 15 }, e: { r: 1, c: 17 } }, // Q3
   ];
 
+    // === Prepare summary counts sheet ===
+  const codes = ['7', '6', '5', '4', '3', '2', '1'];
+  const tasks = [
+    { key: 'task1' as keyof MarkEntry, max: 10, label: 'Task 1' },
+    { key: 'task2' as keyof MarkEntry, max: 30, label: 'Task 2' },
+    { key: 'task3q1' as keyof MarkEntry, max: 20, label: 'Task 3 Q1' },
+    { key: 'task3q2' as keyof MarkEntry, max: 10, label: 'Task 3 Q2' },
+    { key: 'task3q3' as keyof MarkEntry, max: 10, label: 'Task 3 Q3' },
+  ];
+
+  const summaryData = codes.map(code => {
+    const row: Record<string, string | number> = { Code: code };
+    tasks.forEach(({ key, max, label }) => {
+      const count = marks.reduce((acc, entry) => {
+        const pct = ((parseFloat(entry[key]) || 0) / max) * 100;
+        return acc + (getCodeFromPct(pct) === code ? 1 : 0);
+      }, 0);
+      row[label] = count;
+    });
+    return row;
+  });
+
+  const summarySheet = XLSX.utils.json_to_sheet(summaryData);
+
+  // === Create workbook and append both sheets ===
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, 'Results');
-  XLSX.writeFile(workbook, 'results.xlsx');
+  XLSX.utils.book_append_sheet(workbook, summarySheet, 'Summary Counts');
+
+  XLSX.writeFile(workbook, 'results_with_summary.xlsx');
 };
+
 
 
   return (
