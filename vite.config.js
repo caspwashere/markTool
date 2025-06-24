@@ -1,13 +1,18 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import tailwindcss from '@tailwindcss/vite'
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
 import { viteSingleFile } from 'vite-plugin-singlefile';
 
-// https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss(), viteSingleFile()],
-   build: {
+  build: {
     cssCodeSplit: false,
-  },
-  
-})
+    assetsInlineLimit: Infinity, // Ensures everything is inlined
+    rollupOptions: {
+      output: {
+        inlineDynamicImports: true,   // Required for singlefile
+        manualChunks: undefined       // Prevents the conflict error
+      }
+    }
+  }
+});
