@@ -1,4 +1,5 @@
 import { useLocation, useNavigate } from 'react-router-dom';
+import * as XLSX from 'xlsx';
 
 type MarkEntry = {
   task1: string;
@@ -42,6 +43,79 @@ const avgT3q1 = getAverage('task3q1', 20);
 const avgT3q2 = getAverage('task3q2', 10);
 const avgT3q3 = getAverage('task3q3', 10);
 
+const exportToExcel = () => {
+  const headers = [
+    ['Admission No', 'Surname', 'Name',
+     'Task 1 (10)', '', '',
+     'Task 2 (30)', '', '',
+     'Task 3 (40)', '', '', '', '', '', '', '', '', ''],
+    ['', '', '',
+     '', '', '',
+     '', '', '',
+     'Q1 (20)', '', '',
+     'Q2 (10)', '', '',
+     'Q3 (10)', '', ''],
+    ['', '', '',
+     'Mark', '%', 'Code',
+     'Mark', '%', 'Code',
+     'Mark', '%', 'Code',
+     'Mark', '%', 'Code',
+     'Mark', '%', 'Code'],
+  ];
+
+  const rows = data.map((row, i) => {
+    const t1 = formatMarkPct(marks[i]?.task1 || '', 10);
+    const t2 = formatMarkPct(marks[i]?.task2 || '', 30);
+    const t3q1 = formatMarkPct(marks[i]?.task3q1 || '', 20);
+    const t3q2 = formatMarkPct(marks[i]?.task3q2 || '', 10);
+    const t3q3 = formatMarkPct(marks[i]?.task3q3 || '', 10);
+
+    return [
+      row[0], row[1], row[2],
+      t1.mark, t1.pct, getCodeFromPct(+t1.pct),
+      t2.mark, t2.pct, getCodeFromPct(+t2.pct),
+      t3q1.mark, t3q1.pct, getCodeFromPct(+t3q1.pct),
+      t3q2.mark, t3q2.pct, getCodeFromPct(+t3q2.pct),
+      t3q3.mark, t3q3.pct, getCodeFromPct(+t3q3.pct),
+    ];
+  });
+
+  // Add class average row
+  rows.push([
+    '', '', 'Class Average',
+    avgT1.mark, avgT1.pct, '-',
+    avgT2.mark, avgT2.pct, '-',
+    avgT3q1.mark, avgT3q1.pct, '-',
+    avgT3q2.mark, avgT3q2.pct, '-',
+    avgT3q3.mark, avgT3q3.pct, '-',
+  ]);
+
+  const sheetData = [...headers, ...rows];
+  const worksheet = XLSX.utils.aoa_to_sheet(sheetData);
+
+  // Merge cells for headers
+  worksheet['!merges'] = [
+    { s: { r: 0, c: 0 }, e: { r: 2, c: 0 } }, // Admission No
+    { s: { r: 0, c: 1 }, e: { r: 2, c: 1 } }, // Surname
+    { s: { r: 0, c: 2 }, e: { r: 2, c: 2 } }, // Name
+
+    { s: { r: 0, c: 3 }, e: { r: 0, c: 5 } }, // Task 1 group
+    { s: { r: 1, c: 3 }, e: { r: 1, c: 5 } }, // Task 1 Mark/%
+    { s: { r: 0, c: 6 }, e: { r: 0, c: 8 } }, // Task 2 group
+    { s: { r: 1, c: 6 }, e: { r: 1, c: 8 } }, // Task 2 Mark/%
+
+    { s: { r: 0, c: 9 }, e: { r: 0, c: 17 } }, // Task 3 group
+    { s: { r: 1, c: 9 }, e: { r: 1, c: 11 } }, // Q1
+    { s: { r: 1, c: 12 }, e: { r: 1, c: 14 } }, // Q2
+    { s: { r: 1, c: 15 }, e: { r: 1, c: 17 } }, // Q3
+  ];
+
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'Results');
+  XLSX.writeFile(workbook, 'results.xlsx');
+};
+
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-green-100 p-6">
       <div className="max-w-7xl mx-auto bg-white rounded-3xl shadow-2xl p-8 border border-emerald-100">
@@ -51,6 +125,13 @@ const avgT3q3 = getAverage('task3q3', 10);
         >
           ← Back to Edit
         </button>
+
+        <button
+  onClick={exportToExcel}
+  className="mb-6 ml-4 inline-flex items-center px-4 py-2 bg-blue-500 text-white rounded-md shadow hover:bg-blue-600 transition"
+>
+  Export to Excel
+</button>
 
         <h2 className="text-3xl font-extrabold text-emerald-700 mb-8 text-center">Results</h2>
 
